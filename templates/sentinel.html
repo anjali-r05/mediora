@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mediora Sentinel — AI Command Center</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-0: #080d17;
+            --bg-1: #0d1526;
+            --bg-2: #111a2e;
+            --panel: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.08);
+            --text-hi: #eef2f8;
+            --text-mid: rgba(238,242,248,0.62);
+            --text-low: rgba(238,242,248,0.38);
+            --blue: #00a8ff;
+            --teal: #00d2b4;
+            --amber: #ffaa00;
+            --red: #ff4757;
+            --mono: 'JetBrains Mono', monospace;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(1200px 600px at 15% -10%, #10203a 0%, var(--bg-0) 55%), var(--bg-0);
+            color: var(--text-hi);
+            min-height: 100vh;
+        }
+        .wrap { max-width: 1280px; margin: 0 auto; padding: 28px 28px 80px; }
+
+        .top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+        .back-btn {
+            color: var(--text-mid); text-decoration: none; font-size: 13px; font-weight: 500;
+            display: inline-flex; align-items: center; gap: 6px; transition: color .2s;
+        }
+        .back-btn:hover { color: var(--text-hi); }
+        .sentinel-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 7px 14px; border-radius: 100px;
+            border: 1px solid var(--border); background: var(--panel);
+            font-size: 11px; font-weight: 600; letter-spacing: 0.6px; color: var(--text-mid);
+        }
+        .sentinel-badge .dot {
+            width: 6px; height: 6px; border-radius: 50%; background: var(--teal);
+            box-shadow: 0 0 8px var(--teal);
+        }
+
+        .hero {
+            border: 1px solid var(--border); border-radius: 24px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.015));
+            padding: 36px; margin-bottom: 32px;
+            display: grid; grid-template-columns: auto 1fr auto; gap: 36px; align-items: center;
+        }
+        @media (max-width: 860px) { .hero { grid-template-columns: 1fr; text-align: center; } }
+
+        .ring-box { position: relative; width: 148px; height: 148px; flex-shrink: 0; }
+        .ring-box svg { transform: rotate(-90deg); width: 148px; height: 148px; }
+        .ring-track { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 10; }
+        .ring-fill { fill: none; stroke: url(#ringGrad); stroke-width: 10; stroke-linecap: round;
+            stroke-dasharray: 402; stroke-dashoffset: 402; transition: stroke-dashoffset 1.1s cubic-bezier(.3,.8,.3,1); }
+        .ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .ring-score { font-size: 34px; font-weight: 900; line-height: 1; letter-spacing: -0.5px; }
+        .ring-outof { font-size: 10px; color: var(--text-low); margin-top: 3px; letter-spacing: 1px; }
+
+        .hero-mid .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; color: var(--text-low); text-transform: uppercase; margin-bottom: 6px; }
+        .hero-mid h1 { font-size: 22px; font-weight: 800; margin-bottom: 10px; }
+        .hero-meta { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 12px; }
+        .hero-meta .item { font-size: 12px; color: var(--text-mid); display: flex; align-items: center; gap: 6px; }
+        .hero-meta .item b { color: var(--text-hi); font-family: var(--mono); font-weight: 600; }
+        .hero-explain { font-size: 13px; color: var(--text-mid); line-height: 1.6; max-width: 640px; }
+        .status-chip { display: inline-block; padding: 3px 11px; border-radius: 100px; font-size: 11px; font-weight: 700; letter-spacing: .3px; }
+        .status-excellent { background: rgba(0,210,180,0.15); color: var(--teal); }
+        .status-stable { background: rgba(0,168,255,0.15); color: var(--blue); }
+        .status-needs-attention { background: rgba(255,170,0,0.15); color: var(--amber); }
+        .status-critical { background: rgba(255,71,87,0.15); color: var(--red); }
+
+        .scan-btn {
+            background: linear-gradient(135deg, var(--blue), var(--teal));
+            border: none; border-radius: 14px; color: #05131f;
+            font-size: 14px; font-weight: 700; padding: 15px 26px;
+            display: inline-flex; align-items: center; gap: 10px; cursor: pointer;
+            transition: all .25s; white-space: nowrap;
+            box-shadow: 0 10px 28px rgba(0,168,255,0.22);
+        }
+        .scan-btn:hover { transform: translateY(-2px); box-shadow: 0 16px 36px rgba(0,168,255,0.32); }
+        .scan-btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+
+        .section { margin-bottom: 28px; }
+        .section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+        .section-head i { font-size: 15px; color: var(--blue); }
+        .section-head h2 { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-mid); }
+        .panel {
+            border: 1px solid var(--border); border-radius: 18px;
+            background: var(--panel); padding: 22px;
+        }
+
+        .brief-line {
+            display: flex; gap: 12px; padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13.5px; color: var(--text-hi); line-height: 1.6;
+        }
+        .brief-line:last-child { border-bottom: none; }
+        .brief-line i { color: var(--teal); font-size: 13px; margin-top: 3px; flex-shrink: 0; }
+
+        .breakdown-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+        .breakdown-chip {
+            flex: 1; min-width: 150px;
+            border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px;
+            background: rgba(255,255,255,0.02);
+        }
+        .breakdown-chip .k { font-size: 10px; color: var(--text-low); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px; }
+        .breakdown-chip .v { font-family: var(--mono); font-size: 15px; font-weight: 600; }
+        .breakdown-chip .e { font-size: 11px; color: var(--text-mid); margin-top: 4px; line-height: 1.4; }
+
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 860px) { .two-col { grid-template-columns: 1fr; } }
+
+        .card-item { border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; background: rgba(255,255,255,0.015); }
+        .card-item:last-child { margin-bottom: 0; }
+        .card-item-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+        .card-item-title { font-size: 13.5px; font-weight: 700; color: var(--text-hi); }
+        .level-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 100px; letter-spacing: .4px; flex-shrink: 0; }
+        .level-high { background: rgba(255,71,87,0.15); color: var(--red); }
+        .level-medium { background: rgba(255,170,0,0.15); color: var(--amber); }
+        .level-low { background: rgba(0,210,180,0.15); color: var(--teal); }
+        .card-item .reason { font-size: 12.5px; color: var(--text-mid); line-height: 1.55; margin-bottom: 6px; }
+        .card-item .action {
+            font-size: 12px; color: var(--blue); font-weight: 600; display: flex; gap: 6px; align-items: flex-start;
+        }
+        .conf-tag { font-family: var(--mono); font-size: 10.5px; color: var(--text-low); }
+
+        .rec-reason { font-family: var(--mono); font-size: 11.5px; color: var(--text-mid); background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px 10px; margin-top: 8px; line-height: 1.5; }
+
+        .empty-state, .loading-state { text-align: center; padding: 70px 20px; }
+        .empty-state i.big-icon, .loading-state i.big-icon { font-size: 44px; color: var(--text-low); margin-bottom: 18px; display: block; }
+        .empty-state h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+        .empty-state p { font-size: 13px; color: var(--text-mid); max-width: 420px; margin: 0 auto 24px; line-height: 1.6; }
+
+        .radar {
+            width: 92px; height: 92px; margin: 0 auto 22px; border-radius: 50%;
+            border: 2px solid rgba(0,168,255,0.15); position: relative;
+        }
+        .radar::before {
+            content: ''; position: absolute; inset: -2px; border-radius: 50%;
+            border: 2px solid transparent; border-top-color: var(--blue); border-right-color: var(--teal);
+            animation: spin 1.1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-state .msg { font-size: 13px; color: var(--text-mid); }
+
+        .error-banner {
+            border: 1px solid rgba(255,71,87,0.3); background: rgba(255,71,87,0.08);
+            border-radius: 12px; padding: 14px 18px; font-size: 13px; color: #ff8a94; margin-bottom: 20px;
+            display: none; align-items: center; gap: 10px;
+        }
+        .no-signal { font-size: 12px; color: var(--text-low); font-style: italic; padding: 8px 0; }
+    </style>
+</head>
+<body>
+
+<div class="wrap">
+
+    <div class="top-row">
+        <a href="/dashboard" class="back-btn"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
+        <div class="sentinel-badge"><span class="dot"></span> MEDIORA SENTINEL™ · Autonomous Hospital Intelligence</div>
+    </div>
+
+    <div id="errorBanner" class="error-banner"><i class="bi bi-exclamation-triangle"></i> <span id="errorText"></span></div>
+
+    <div class="hero">
+        <div class="ring-box">
+            <svg viewBox="0 0 148 148">
+                <defs>
+                    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#00a8ff"/>
+                        <stop offset="100%" stop-color="#00d2b4"/>
+                    </linearGradient>
+                </defs>
+                <circle class="ring-track" cx="74" cy="74" r="64"></circle>
+                <circle class="ring-fill" id="ringFill" cx="74" cy="74" r="64"></circle>
+            </svg>
+            <div class="ring-center">
+                <div class="ring-score" id="ringScore">—</div>
+                <div class="ring-outof">/ 100</div>
+            </div>
+        </div>
+        <div class="hero-mid">
+            <div class="eyebrow">Hospital Pulse Score</div>
+            <h1><span class="status-chip status-stable" id="statusChip">Awaiting first scan</span></h1>
+            <div class="hero-meta">
+                <div class="item">AI confidence: <b id="confidenceVal">—</b></div>
+                <div class="item">Last scan: <b id="scanTimeVal">Never</b></div>
+            </div>
+            <div class="hero-explain" id="explainText">
+                Run a scan to generate a live operational reading of the hospital, weighted across bed occupancy, doctor availability, medicine stock, patient continuity, and admission volume.
+            </div>
+        </div>
+        <div>
+            <button class="scan-btn" id="scanBtn" onclick="runScan()">
+                <i class="bi bi-radar"></i> Run Sentinel Scan
+            </button>
+        </div>
+    </div>
+
+    <div id="emptyState" class="panel empty-state">
+        <i class="bi bi-shield-check big-icon"></i>
+        <h3>Sentinel hasn't scanned your hospital yet</h3>
+        <p>One scan reads the live database — beds, doctors, medicines, patients, and admissions — and turns it into a Mission Brief, risk predictions, and evidence-based recommendations.</p>
+    </div>
+
+    <div id="loadingState" class="panel loading-state" style="display:none;">
+        <div class="radar"></div>
+        <div class="msg" id="loadingMsg">Reading hospital database...</div>
+    </div>
+
+    <div id="resultsState" style="display:none;">
+
+        <div class="section">
+            <div class="section-head"><i class="bi bi-clipboard-data"></i><h2>AI Mission Brief</h2></div>
+            <div class="panel">
+                <div id="missionBriefList"></div>
+                <div class="breakdown-row" id="breakdownRow"></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="two-col">
+                <div>
+                    <div class="section-head"><i class="bi bi-graph-up-arrow"></i><h2>Predictive Risk Detection</h2></div>
+                    <div id="risksList"></div>
+                </div>
+                <div>
+                    <div class="section-head"><i class="bi bi-lightbulb"></i><h2>Explainable Recommendations</h2></div>
+                    <div id="recsList"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+const loadingMessages = [
+    'Reading hospital database...',
+    'Scoring bed occupancy and doctor availability...',
+    'Cross-checking medicine stock levels...',
+    'Evaluating patient continuity and admission trends...',
+    'Generating Mission Brief and recommendations...'
+];
+
+function statusClass(status) {
+    const s = (status || '').toLowerCase();
+    if (s.includes('excellent')) return 'status-excellent';
+    if (s.includes('critical')) return 'status-critical';
+    if (s.includes('attention')) return 'status-needs-attention';
+    return 'status-stable';
+}
+
+function levelClass(level) {
+    const l = (level || '').toLowerCase();
+    if (l === 'high') return 'level-high';
+    if (l === 'low') return 'level-low';
+    return 'level-medium';
+}
+
+async function runScan() {
+    const btn = document.getElementById('scanBtn');
+    btn.disabled = true;
+    document.getElementById('errorBanner').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('resultsState').style.display = 'none';
+    document.getElementById('loadingState').style.display = 'block';
+
+    let i = 0;
+    const msgInterval = setInterval(() => {
+        document.getElementById('loadingMsg').textContent = loadingMessages[i % loadingMessages.length];
+        i++;
+    }, 1400);
+
+    try {
+        const res = await fetch('/sentinel/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const data = await res.json();
+        clearInterval(msgInterval);
+        btn.disabled = false;
+
+        if (data.error) {
+            showError(data.error);
+            return;
+        }
+        renderResults(data);
+    } catch (e) {
+        clearInterval(msgInterval);
+        btn.disabled = false;
+        showError('Connection error — please try again.');
+    }
+}
+
+function showError(msg) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'block';
+    const banner = document.getElementById('errorBanner');
+    document.getElementById('errorText').textContent = msg;
+    banner.style.display = 'flex';
+}
+
+function renderResults(data) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('resultsState').style.display = 'block';
+
+    const pulse = data.pulse || {};
+    const score = pulse.score || 0;
+
+    document.getElementById('ringScore').textContent = score;
+    const circumference = 402;
+    const offset = circumference - (score / 100) * circumference;
+    requestAnimationFrame(() => {
+        document.getElementById('ringFill').style.strokeDashoffset = offset;
+    });
+
+    const chip = document.getElementById('statusChip');
+    chip.textContent = pulse.status || 'Unknown';
+    chip.className = 'status-chip ' + statusClass(pulse.status);
+
+    document.getElementById('confidenceVal').textContent = (pulse.confidence_pct != null ? pulse.confidence_pct : '—') + '%';
+    document.getElementById('scanTimeVal').textContent = data.scan_time
+        ? new Date(data.scan_time).toLocaleString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })
+        : 'Just now';
+    document.getElementById('explainText').textContent = pulse.explanation || '';
+
+    const briefEl = document.getElementById('missionBriefList');
+    briefEl.innerHTML = '';
+    const brief = data.mission_brief || [];
+    if (brief.length === 0) {
+        briefEl.innerHTML = '<div class="no-signal">No notable observations — hospital operations look nominal.</div>';
+    } else {
+        brief.forEach(line => {
+            const div = document.createElement('div');
+            div.className = 'brief-line';
+            div.innerHTML = '<i class="bi bi-arrow-right-short"></i><span>' + escapeHtml(line) + '</span>';
+            briefEl.appendChild(div);
+        });
+    }
+
+    const breakdownEl = document.getElementById('breakdownRow');
+    breakdownEl.innerHTML = '';
+    (pulse.breakdown || []).forEach(b => {
+        const div = document.createElement('div');
+        div.className = 'breakdown-chip';
+        const label = (b.metric || '').replace(/_/g, ' ');
+        div.innerHTML =
+            '<div class="k">' + escapeHtml(label) + '</div>' +
+            '<div class="v">' + b.points_contributed + ' / ' + b.weight_pct + ' pts</div>' +
+            '<div class="e">' + escapeHtml(b.evidence || '') + '</div>';
+        breakdownEl.appendChild(div);
+    });
+
+    const risksEl = document.getElementById('risksList');
+    risksEl.innerHTML = '';
+    const risks = data.risks || [];
+    if (risks.length === 0) {
+        risksEl.innerHTML = '<div class="panel"><div class="no-signal">No significant operational risks detected in this scan.</div></div>';
+    } else {
+        risks.forEach(r => {
+            const div = document.createElement('div');
+            div.className = 'card-item';
+            div.innerHTML =
+                '<div class="card-item-top"><div class="card-item-title">' + escapeHtml(r.title || 'Risk') + '</div>' +
+                '<span class="level-badge ' + levelClass(r.level) + '">' + escapeHtml(r.level || '') + '</span></div>' +
+                '<div class="reason">' + escapeHtml(r.reason || '') + '</div>' +
+                '<div class="action"><i class="bi bi-arrow-return-right"></i>' + escapeHtml(r.recommended_action || '') + '</div>' +
+                '<div class="conf-tag">confidence ' + (r.confidence_pct != null ? r.confidence_pct : '—') + '%</div>';
+            risksEl.appendChild(div);
+        });
+    }
+
+    const recsEl = document.getElementById('recsList');
+    recsEl.innerHTML = '';
+    const recs = data.recommendations || [];
+    if (recs.length === 0) {
+        recsEl.innerHTML = '<div class="panel"><div class="no-signal">No new recommendations — current operations are within healthy bounds.</div></div>';
+    } else {
+        recs.forEach(r => {
+            const div = document.createElement('div');
+            div.className = 'card-item';
+            div.innerHTML =
+                '<div class="card-item-title" style="margin-bottom:8px;">' + escapeHtml(r.action || '') + '</div>' +
+                '<div class="rec-reason">' + escapeHtml(r.reason || '') + '</div>';
+            recsEl.appendChild(div);
+        });
+    }
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+}
+</script>
+</body>
+</html>

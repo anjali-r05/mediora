@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% block title %}Doctors{% endblock %}
+{% block page_title %}Doctor Management{% endblock %}
+{% block breadcrumb %}Doctors{% endblock %}
+
+{% block content %}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="icon-box" style="background:#e8f4ff;">
+                <i class="bi bi-person-badge-fill" style="color:#00a8ff;"></i>
+            </div>
+            <div class="stat-value">{{ doctors|length }}</div>
+            <div class="stat-label">Total Doctors</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="icon-box" style="background:#e8fff8;">
+                <i class="bi bi-calendar-check-fill" style="color:#00d2b4;"></i>
+            </div>
+            <div class="stat-value">{{ today_attendance|length }}</div>
+            <div class="stat-label">Attendance Marked Today</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="icon-box" style="background:#fff8e6;">
+                <i class="bi bi-building" style="color:#ffaa00;"></i>
+            </div>
+            <div class="stat-value">{{ departments|length }}</div>
+            <div class="stat-label">Departments</div>
+        </div>
+    </div>
+</div>
+
+<!-- Doctors Table -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h6><i class="bi bi-person-badge-fill me-2" style="color:#00a8ff;"></i>All Doctors</h6>
+        <button class="btn-primary-custom btn" data-bs-toggle="modal" data-bs-target="#addDoctorModal">
+            <i class="bi bi-plus-lg me-1"></i> Add Doctor
+        </button>
+    </div>
+    <div class="content-card-body">
+
+        <!-- Search -->
+        <form method="GET" action="/doctors" class="row g-2 mb-3">
+            <div class="col-md-6">
+                <input type="text" name="search" class="form-control" placeholder="Search doctor name..." value="{{ search }}">
+            </div>
+            <div class="col-md-4">
+                <select name="department" class="form-select">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept }}" {% if dept_filter==dept %}selected{% endif %}>{{ dept }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn-primary-custom btn w-100">Search</button>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Doctor Name</th>
+                        <th>Specialization</th>
+                        <th>Department</th>
+                        <th>Experience</th>
+                        <th>Today</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doctor in doctors %}
+                    <tr>
+                        <td style="color:#8899aa;">D{{ '%03d' % doctor.id }}</td>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#00a8ff,#00d2b4);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;flex-shrink:0;">
+                                    {{ doctor.name[0] }}
+                                </div>
+                                <div>
+                                    <div style="font-weight:600;">Dr. {{ doctor.name }}</div>
+                                    <div style="font-size:11px;color:#8899aa;">{{ doctor.phone }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ doctor.specialization }}</td>
+                        <td>
+                            <span style="background:#f0f4f8;padding:4px 10px;border-radius:20px;font-size:12px;">
+                                {{ doctor.department }}
+                            </span>
+                        </td>
+                        <td>{{ doctor.experience_years }} yrs</td>
+                        <td>
+                            {% if doctor.id in today_attendance %}
+                                {% set att = today_attendance[doctor.id] %}
+                                {% if att.status == 'Present' %}
+                                    <span class="badge-status badge-available">Present</span>
+                                {% elif att.status == 'Absent' %}
+                                    <span class="badge-status badge-occupied">Absent</span>
+                                {% else %}
+                                    <span class="badge-status badge-low">Late</span>
+                                {% endif %}
+                            {% else %}
+                                <span style="color:#8899aa;font-size:12px;">Not Marked</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if doctor.status == 'Active' %}
+                                <span class="badge-status badge-available">Active</span>
+                            {% else %}
+                                <span class="badge-status badge-occupied">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display:flex;gap:6px;">
+                                <button class="btn btn-sm" style="background:#f0f4f8;border:none;border-radius:8px;padding:5px 10px;"
+                                    data-bs-toggle="modal" data-bs-target="#editDoctorModal{{ doctor.id }}">
+                                    <i class="bi bi-pencil" style="color:#00a8ff;"></i>
+                                </button>
+                                <button class="btn btn-sm" style="background:#f0fff8;border:none;border-radius:8px;padding:5px 10px;"
+                                    data-bs-toggle="modal" data-bs-target="#attendanceModal{{ doctor.id }}">
+                                    <i class="bi bi-calendar-check" style="color:#00d2b4;"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Edit Doctor Modal -->
+                    <div class="modal fade" id="editDoctorModal{{ doctor.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content" style="border-radius:16px;border:none;">
+                                <div class="modal-header" style="border-bottom:1px solid #f0f4f8;">
+                                    <h5 class="modal-title" style="font-weight:700;">Edit Dr. {{ doctor.name }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="POST" action="/doctors/edit/{{ doctor.id }}">
+                                    <div class="modal-body">
+                                        <div class="row g-3">
+                                            <div class="col-12">
+                                                <label class="form-label fw-semibold">Full Name</label>
+                                                <input type="text" name="name" class="form-control" value="{{ doctor.name }}" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Specialization</label>
+                                                <input type="text" name="specialization" class="form-control" value="{{ doctor.specialization }}">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Department</label>
+                                                <input type="text" name="department" class="form-control" value="{{ doctor.department }}">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Phone</label>
+                                                <input type="text" name="phone" class="form-control" value="{{ doctor.phone }}">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Experience (Years)</label>
+                                                <input type="number" name="experience_years" class="form-control" value="{{ doctor.experience_years }}">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Email</label>
+                                                <input type="email" name="email" class="form-control" value="{{ doctor.email }}">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Status</label>
+                                                <select name="status" class="form-select">
+                                                    <option {% if doctor.status=='Active' %}selected{% endif %}>Active</option>
+                                                    <option {% if doctor.status=='Inactive' %}selected{% endif %}>Inactive</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer" style="border-top:1px solid #f0f4f8;">
+                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn-primary-custom btn">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Attendance Modal -->
+                    <div class="modal fade" id="attendanceModal{{ doctor.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content" style="border-radius:16px;border:none;">
+                                <div class="modal-header" style="border-bottom:1px solid #f0f4f8;">
+                                    <h5 class="modal-title" style="font-weight:700;">
+                                        <i class="bi bi-calendar-check me-2" style="color:#00d2b4;"></i>
+                                        Mark Attendance — Dr. {{ doctor.name }}
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="POST" action="/doctors/attendance">
+                                    <input type="hidden" name="doctor_id" value="{{ doctor.id }}">
+                                    <div class="modal-body">
+                                        <div class="row g-3">
+                                            <div class="col-12">
+                                                <label class="form-label fw-semibold">Attendance Status</label>
+                                                <div class="d-flex gap-2">
+                                                    <div class="form-check flex-fill text-center p-3" style="border:2px solid #e8edf2;border-radius:12px;cursor:pointer;">
+                                                        <input class="form-check-input" type="radio" name="status" value="Present" id="present{{ doctor.id }}" checked>
+                                                        <label class="form-check-label d-block" for="present{{ doctor.id }}">
+                                                            <i class="bi bi-check-circle-fill" style="color:#00c97a;font-size:20px;display:block;"></i>
+                                                            <span style="font-size:13px;font-weight:600;">Present</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check flex-fill text-center p-3" style="border:2px solid #e8edf2;border-radius:12px;cursor:pointer;">
+                                                        <input class="form-check-input" type="radio" name="status" value="Absent" id="absent{{ doctor.id }}">
+                                                        <label class="form-check-label d-block" for="absent{{ doctor.id }}">
+                                                            <i class="bi bi-x-circle-fill" style="color:#ff4757;font-size:20px;display:block;"></i>
+                                                            <span style="font-size:13px;font-weight:600;">Absent</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check flex-fill text-center p-3" style="border:2px solid #e8edf2;border-radius:12px;cursor:pointer;">
+                                                        <input class="form-check-input" type="radio" name="status" value="Late" id="late{{ doctor.id }}">
+                                                        <label class="form-check-label d-block" for="late{{ doctor.id }}">
+                                                            <i class="bi bi-clock-fill" style="color:#ffaa00;font-size:20px;display:block;"></i>
+                                                            <span style="font-size:13px;font-weight:600;">Late</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Check-in Time</label>
+                                                <input type="time" name="check_in_time" class="form-control">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Notes</label>
+                                                <input type="text" name="notes" class="form-control" placeholder="Optional notes">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer" style="border-top:1px solid #f0f4f8;">
+                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn-primary-custom btn">
+                                            <i class="bi bi-check-lg me-1"></i>Mark Attendance
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align:center;padding:40px;color:#8899aa;">
+                            <i class="bi bi-person-badge" style="font-size:36px;display:block;margin-bottom:10px;"></i>
+                            No doctors found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Doctor Modal -->
+<div class="modal fade" id="addDoctorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius:16px;border:none;">
+            <div class="modal-header" style="border-bottom:1px solid #f0f4f8;">
+                <h5 class="modal-title" style="font-weight:700;">
+                    <i class="bi bi-person-badge-fill me-2" style="color:#00a8ff;"></i>Add New Doctor
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="/doctors/add">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Full Name *</label>
+                            <input type="text" name="name" class="form-control" placeholder="Doctor full name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Specialization *</label>
+                            <input type="text" name="specialization" class="form-control" placeholder="e.g. Cardiologist" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Department *</label>
+                            <input type="text" name="department" class="form-control" placeholder="e.g. Cardiology" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Phone</label>
+                            <input type="text" name="phone" class="form-control" placeholder="10-digit number">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Experience (Years)</label>
+                            <input type="number" name="experience_years" class="form-control" placeholder="Years of experience">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Email</label>
+                            <input type="email" name="email" class="form-control" placeholder="doctor@hospital.com">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top:1px solid #f0f4f8;">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-primary-custom btn">
+                        <i class="bi bi-plus-lg me-1"></i>Add Doctor
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

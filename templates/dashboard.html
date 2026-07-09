@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block breadcrumb %}Overview{% endblock %}
+
+{% block content %}
+<!-- ========================= -->
+<!-- MEDIORA SENTINEL HERO -->
+<!-- ======================
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="icon-box" style="background:#e8f4ff;">
+                <i class="bi bi-people-fill" style="color:#00a8ff;"></i>
+            </div>
+            <div class="stat-value">{{ stats.total_patients }}</div>
+            <div class="stat-label">Active Patients</div>
+            <div class="stat-change" style="color:#00c97a;">
+                <i class="bi bi-arrow-up-short"></i> Admitted Today
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="icon-box" style="background:#e8fff8;">
+                <i class="bi bi-person-badge-fill" style="color:#00d2b4;"></i>
+            </div>
+            <div class="stat-value">{{ stats.total_doctors }}</div>
+            <div class="stat-label">Active Doctors</div>
+            <div class="stat-change" style="color:#00c97a;">
+                <i class="bi bi-arrow-up-short"></i> {{ stats.today_attendance }} Present Today
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="icon-box" style="background:#fff0f0;">
+                <i class="bi bi-hospital-fill" style="color:#ff4757;"></i>
+            </div>
+            <div class="stat-value">{{ stats.available_beds }}</div>
+            <div class="stat-label">Available Beds</div>
+            <div class="stat-change" style="color:#ff4757;">
+                <i class="bi bi-dash"></i> {{ stats.occupied_beds }} Occupied
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="icon-box" style="background:#fff8e6;">
+                <i class="bi bi-capsule" style="color:#ffaa00;"></i>
+            </div>
+            <div class="stat-value">{{ stats.low_stock_meds }}</div>
+            <div class="stat-label">Low Stock Medicines</div>
+            <div class="stat-change" style="color:#ffaa00;">
+                <i class="bi bi-exclamation-triangle"></i> Needs Restock
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-8">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h6><i class="bi bi-graph-up me-2" style="color:#00a8ff;"></i>Patient Admissions (Last 6 Months)</h6>
+            </div>
+            <div class="content-card-body">
+                <canvas id="patientChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h6><i class="bi bi-pie-chart-fill me-2" style="color:#00d2b4;"></i>Bed Occupancy</h6>
+            </div>
+            <div class="content-card-body">
+                <canvas id="bedChart" height="160"></canvas>
+                <div class="d-flex justify-content-center gap-3 mt-3">
+                    <div class="text-center">
+                        <div style="font-size:18px;font-weight:800;color:#00c97a;">{{ bed_chart.available }}</div>
+                        <div style="font-size:11px;color:#8899aa;">Available</div>
+                    </div>
+                    <div class="text-center">
+                        <div style="font-size:18px;font-weight:800;color:#ff4757;">{{ bed_chart.occupied }}</div>
+                        <div style="font-size:11px;color:#8899aa;">Occupied</div>
+                    </div>
+                    <div class="text-center">
+                        <div style="font-size:18px;font-weight:800;color:#ffaa00;">{{ bed_chart.maintenance }}</div>
+                        <div style="font-size:11px;color:#8899aa;">Maintenance</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Medicine + Activity Row -->
+<div class="row g-3">
+    <div class="col-xl-6">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h6><i class="bi bi-capsule me-2" style="color:#ffaa00;"></i>Medicine Categories</h6>
+                <a href="/inventory" class="btn-primary-custom btn btn-sm">View All</a>
+            </div>
+            <div class="content-card-body" style="padding:0;">
+                <canvas id="medChart" height="180" style="padding:16px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h6><i class="bi bi-activity me-2" style="color:#00a8ff;"></i>Recent Activity</h6>
+            </div>
+            <div class="content-card-body" style="padding:0;">
+                <div style="max-height:280px;overflow-y:auto;">
+                    {% for activity in recent_activities %}
+                    <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid #f8fafc;">
+                        <div style="width:34px;height:34px;border-radius:9px;background:#f0f4f8;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="bi {{ activity.icon }}" style="color:#00a8ff;font-size:14px;"></i>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size:13px;font-weight:500;color:#1a2332;">{{ activity.action }}</div>
+                            <div style="font-size:11px;color:#8899aa;">{{ activity.timestamp.strftime('%d %b, %H:%M') }}</div>
+                        </div>
+                        <span class="badge-status badge-available">{{ activity.category }}</span>
+                    </div>
+                    {% else %}
+                    <div style="padding:30px;text-align:center;color:#8899aa;font-size:13px;">
+                        <i class="bi bi-inbox" style="font-size:32px;display:block;margin-bottom:8px;"></i>
+                        No recent activity
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Patient Admissions Chart
+new Chart(document.getElementById('patientChart'), {
+    type: 'line',
+    data: {
+        labels: {{ month_labels | tojson }},
+        datasets: [{
+            label: 'Admissions',
+            data: {{ monthly_data | tojson }},
+            borderColor: '#00a8ff',
+            backgroundColor: 'rgba(0,168,255,0.08)',
+            borderWidth: 2.5,
+            pointBackgroundColor: '#00a8ff',
+            pointRadius: 4,
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, grid: { color: '#f0f4f8' }, ticks: { font: { size: 11 } } },
+            x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+        }
+    }
+});
+
+// Bed Chart
+new Chart(document.getElementById('bedChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Available', 'Occupied', 'Maintenance'],
+        datasets: [{
+            data: [{{ bed_chart.available }}, {{ bed_chart.occupied }}, {{ bed_chart.maintenance }}],
+            backgroundColor: ['#00c97a', '#ff4757', '#ffaa00'],
+            borderWidth: 0,
+            hoverOffset: 6
+        }]
+    },
+    options: {
+        responsive: true,
+        cutout: '72%',
+        plugins: { legend: { display: false } }
+    }
+});
+
+// Medicine Category Chart
+new Chart(document.getElementById('medChart'), {
+    type: 'bar',
+    data: {
+        labels: [{% for cat, count in med_categories %}'{{ cat }}',{% endfor %}],
+        datasets: [{
+            label: 'Medicines',
+            data: [{% for cat, count in med_categories %}{{ count }},{% endfor %}],
+            backgroundColor: ['#00a8ff','#00d2b4','#ffaa00','#ff4757','#a855f7','#06b6d4'],
+            borderRadius: 8, borderSkipped: false
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, grid: { color: '#f0f4f8' }, ticks: { font: { size: 11 } } },
+            x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+        }
+    }
+});
+</script>
+{% endblock %}

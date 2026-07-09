@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+body { font-family: 'Inter', sans-serif !important; background: #f8fafc !important; }
+
+.sidebar { background: #1e3a8a !important; border-right: none !important; box-shadow: 4px 0 20px rgba(0,0,0,0.1) !important; }
+.sidebar-brand .logo { background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important; }
+.sidebar-brand .name { color: white !important; }
+.sidebar-brand .name span { color: #93c5fd !important; }
+.sidebar-brand .sub { color: rgba(147,197,253,0.5) !important; }
+.nav-link { color: rgba(255,255,255,0.6) !important; }
+.nav-link:hover { background: rgba(255,255,255,0.1) !important; color: white !important; }
+.nav-link.active { background: rgba(255,255,255,0.15) !important; color: white !important; border: 1px solid rgba(255,255,255,0.2) !important; }
+.nav-link.active i { color: #93c5fd !important; }
+.nav-section-label { color: rgba(147,197,253,0.4) !important; }
+.user-card { background: rgba(255,255,255,0.1) !important; border: 1px solid rgba(255,255,255,0.15) !important; }
+.user-avatar { background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important; }
+.user-info .uname { color: white !important; }
+.user-info .urole { color: rgba(147,197,253,0.6) !important; }
+
+.topbar { background: white !important; box-shadow: 0 1px 10px rgba(0,0,0,0.06) !important; }
+.topbar-left .page-title { color: #1e293b !important; font-weight: 700 !important; }
+.topbar-left .breadcrumb-text { color: #94a3b8 !important; }
+.topbar-btn { background: #f1f5f9 !important; color: #64748b !important; border: 1px solid #e2e8f0 !important; }
+.topbar-btn:hover { background: #3b82f6 !important; color: white !important; }
+
+.page-body { background: #f8fafc !important; }
+
+.stat-card { background: white !important; border-radius: 16px !important; border: 1px solid #e2e8f0 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.06) !important; transition: all 0.3s !important; }
+.stat-card:hover { transform: translateY(-4px) !important; box-shadow: 0 12px 28px rgba(0,0,0,0.1) !important; }
+.stat-card:nth-child(1) { border-top: 4px solid #3b82f6 !important; }
+.stat-card:nth-child(2) { border-top: 4px solid #10b981 !important; }
+.stat-card:nth-child(3) { border-top: 4px solid #f59e0b !important; }
+.stat-card:nth-child(4) { border-top: 4px solid #ef4444 !important; }
+.stat-card .stat-value { font-size: 34px !important; font-weight: 900 !important; color: #1e293b !important; -webkit-text-fill-color: #1e293b !important; }
+.stat-card .stat-label { color: #64748b !important; font-size: 12px !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; }
+.stat-card .icon-box { border-radius: 12px !important; }
+
+.content-card { background: white !important; border-radius: 16px !important; border: 1px solid #e2e8f0 !important; box-shadow: 0 2px 12px rgba(0,0,0,0.05) !important; }
+.content-card-header { background: white !important; border-bottom: 2px solid #f1f5f9 !important; border-radius: 16px 16px 0 0 !important; }
+.content-card-header h6 { color: #1e293b !important; font-weight: 700 !important; }
+
+.table th { background: #f8fafc !important; color: #64748b !important; font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 1px !important; border-bottom: 2px solid #e2e8f0 !important; }
+.table td { color: #334155 !important; border-bottom: 1px solid #f1f5f9 !important; font-size: 13px !important; }
+.table tbody tr:hover td { background: #f8faff !important; }
+
+.btn-primary-custom { background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important; border: none !important; border-radius: 10px !important; color: white !important; font-weight: 600 !important; box-shadow: 0 4px 12px rgba(59,130,246,0.3) !important; transition: all 0.2s !important; }
+.btn-primary-custom:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 20px rgba(59,130,246,0.4) !important; color: white !important; }
+
+.badge-available { background: #dcfce7 !important; color: #166534 !important; border: 1px solid #bbf7d0 !important; font-weight: 600 !important; }
+.badge-occupied { background: #fee2e2 !important; color: #991b1b !important; border: 1px solid #fecaca !important; font-weight: 600 !important; }
+.badge-low { background: #fef3c7 !important; color: #92400e !important; border: 1px solid #fde68a !important; font-weight: 600 !important; }
+.badge-expired { background: #ede9fe !important; color: #5b21b6 !important; border: 1px solid #ddd6fe !important; font-weight: 600 !important; }
+
+.btn-light { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; color: #64748b !important; border-radius: 10px !important; }
+.btn-light:hover { background: #f1f5f9 !important; color: #1e293b !important; }
+
+::-webkit-scrollbar { width: 5px !important; }
+::-webkit-scrollbar-thumb { background: linear-gradient(#3b82f6, #8b5cf6) !important; border-radius: 10px !important; }
+/* ================================= */
+/* MEDIORA SENTINEL */
+/* ================================= */
+

@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Health Twin — {{ patient.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh; }
+
+        .ht-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #7c3aed 100%);
+            padding: 32px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .ht-header::before {
+            content: '';
+            position: absolute;
+            top: -50%; right: -10%;
+            width: 400px; height: 400px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+        }
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            transition: color 0.2s;
+        }
+        .back-btn:hover { color: white; }
+        .patient-avatar {
+            width: 64px; height: 64px;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px; font-weight: 800; color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            flex-shrink: 0;
+        }
+        .patient-name { font-size: 24px; font-weight: 800; }
+        .patient-meta { font-size: 13px; color: rgba(255,255,255,0.65); margin-top: 4px; }
+        .ai-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+        .page-body { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
+
+        .score-card {
+            background: white;
+            border-radius: 20px;
+            padding: 28px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            text-align: center;
+        }
+        .score-circle {
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(#2563eb 0deg, #e2e8f0 0deg);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+        }
+        .score-circle-inner {
+            width: 90px; height: 90px;
+            background: white;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column;
+        }
+        .score-number { font-size: 28px; font-weight: 900; color: #1e293b; line-height: 1; }
+        .score-label { font-size: 10px; color: #64748b; font-weight: 600; }
+
+        .organ-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            height: 100%;
+        }
+        .organ-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(37,99,235,0.12);
+            border-color: #bfdbfe;
+        }
+        .organ-card.selected {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+        .organ-icon { font-size: 32px; margin-bottom: 10px; display: block; }
+        .organ-name { font-size: 13px; font-weight: 700; color: #1e293b; }
+        .organ-score { font-size: 22px; font-weight: 900; margin: 6px 0; }
+        .organ-status { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; display: inline-block; }
+        .status-good { background: #dcfce7; color: #166534; }
+        .status-moderate { background: #fef3c7; color: #92400e; }
+        .status-needs { background: #fee2e2; color: #991b1b; }
+        .organ-progress { height: 6px; background: #f1f5f9; border-radius: 10px; margin-top: 12px; overflow: hidden; }
+        .organ-progress-bar { height: 100%; border-radius: 10px; transition: width 1s ease; }
+
+        .detail-panel {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            overflow: hidden;
+            display: none;
+        }
+        .detail-panel.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .detail-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid #f1f5f9;
+            background: linear-gradient(135deg, #f8faff, #ffffff);
+        }
+        .trend-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .trend-up { background: #dcfce7; color: #166534; }
+        .trend-down { background: #fee2e2; color: #991b1b; }
+        .trend-stable { background: #f1f5f9; color: #475569; }
+        .trend-monitor { background: #fef3c7; color: #92400e; }
+        .risk-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .risk-low { background: #dcfce7; color: #166534; }
+        .risk-medium { background: #fef3c7; color: #92400e; }
+        .risk-high { background: #fee2e2; color: #991b1b; }
+
+        .whatif-card {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 1px solid #bae6fd;
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.2s;
+            height: 100%;
+        }
+        .whatif-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(14,165,233,0.1); }
+
+        .risk-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 16px;
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #9a3412;
+        }
+        .action-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 16px;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #166534;
+        }
+        .loading-state { text-align: center; padding: 60px 20px; }
+        .loading-spinner {
+            width: 50px; height: 50px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .analyze-btn {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 16px 40px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 24px rgba(37,99,235,0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .analyze-btn:hover { transform: translateY(-3px); box-shadow: 0 14px 32px rgba(37,99,235,0.4); }
+        .section-title {
+            font-size: 16px; font-weight: 700; color: #1e293b;
+            margin-bottom: 16px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .content-card {
+            background: white; border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            padding: 24px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="ht-header">
+    <div style="max-width:1400px;margin:0 auto;padding:0 32px;">
+        <a href="/patients" class="back-btn">
+            <i class="bi bi-arrow-left"></i> Back to Patients
+        </a>
+        <div class="d-flex align-items-center gap-4">
+            <div class="patient-avatar">{{ patient.name[0].upper() }}</div>
+            <div>
+                <div class="d-flex align-items-center gap-3 mb-1">
+                    <div class="patient-name">{{ patient.name }}</div>
+                    <div class="ai-badge"><i class="bi bi-stars"></i> AI Health Twin</div>
+                </div>
+                <div class="patient-meta">
+                    {{ patient.age }} years • {{ patient.gender }} •
+                    {{ patient.disease or 'No diagnosis recorded' }} •
+                    Admitted: {{ patient.admission_date.strftime('%d %b %Y') if patient.admission_date else 'N/A' }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body" id="initialState">
+    <div class="content-card text-center" style="padding:60px;">
+        <div style="font-size:64px;margin-bottom:20px;">🧠</div>
+        <h3 style="font-size:22px;font-weight:800;color:#1e293b;margin-bottom:10px;">AI Health Twin Analysis</h3>
+        <p style="color:#64748b;font-size:14px;max-width:500px;margin:0 auto 32px;">
+            Mediora's AI will analyze {{ patient.name }}'s complete health profile and generate
+            a comprehensive digital health twin with organ-wise insights, risk assessment,
+            and personalized recommendations.
+        </p>
+        <div class="row g-3 mb-4" style="max-width:600px;margin:0 auto 32px;">
+            <div class="col-6">
+                <div style="background:#f8fafc;border-radius:12px;padding:14px;text-align:left;">
+                    <div style="font-size:11px;color:#94a3b8;font-weight:600;text-transform:uppercase;">Disease</div>
+                    <div style="font-size:13px;font-weight:600;color:#1e293b;margin-top:4px;">{{ patient.disease or 'Not recorded' }}</div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div style="background:#f8fafc;border-radius:12px;padding:14px;text-align:left;">
+                    <div style="font-size:11px;color:#94a3b8;font-weight:600;text-transform:uppercase;">Medical History</div>
+                    <div style="font-size:13px;font-weight:600;color:#1e293b;margin-top:4px;">
+                        {{ (patient.medical_history[:30] + '...') if patient.medical_history and patient.medical_history|length > 30 else (patient.medical_history or 'Not recorded') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="analyze-btn" onclick="startAnalysis()">
+            <i class="bi bi-stars"></i> Generate AI Health Twin
+        </button>
+        <div style="margin-top:14px;font-size:12px;color:#94a3b8;">Powered by Google Gemini AI • Takes 10-15 seconds</div>
+    </div>
+</div>
+
+<div class="page-body" id="loadingState" style="display:none;">
+    <div class="content-card">
+        <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <h4 style="font-weight:700;color:#1e293b;margin-bottom:8px;">Analyzing Health Data...</h4>
+            <p style="color:#64748b;font-size:13px;" id="loadingText">Processing patient records...</p>
+        </div>
+    </div>
+</div>
+<div class="page-body" id="resultsState" style="display:none;">
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="score-card h-100">
+                <div class="score-circle" id="scoreCircle">
+                    <div class="score-circle-inner">
+                        <div class="score-number" id="overallScore">--</div>
+                        <div class="score-label">/ 100</div>
+                    </div>
+                </div>
+                <div style="font-size:16px;font-weight:800;color:#1e293b;" id="overallStatus">--</div>
+                <div style="font-size:12px;color:#64748b;margin-top:4px;">Overall Health Score</div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="content-card h-100">
+                <div class="section-title">
+                    <i class="bi bi-robot" style="color:#2563eb;"></i> AI Health Summary
+                </div>
+                <p style="font-size:14px;color:#334155;line-height:1.7;" id="healthSummary">--</p>
+                <div class="row g-3 mt-2" id="riskActionsRow"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-title">
+        <i class="bi bi-heart-pulse" style="color:#ef4444;"></i>
+        Organ Health Analysis — Click any organ for details
+    </div>
+    <div class="row g-3 mb-4" id="organCards"></div>
+
+    <div class="detail-panel mb-4" id="detailPanel">
+        <div class="detail-header">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span id="detailIcon" style="font-size:28px;margin-right:12px;"></span>
+                    <span id="detailName" style="font-size:18px;font-weight:800;color:#1e293b;"></span>
+                </div>
+                <div class="d-flex gap-2">
+                    <span class="trend-badge" id="detailTrend"></span>
+                    <span class="risk-badge" id="detailRisk"></span>
+                </div>
+            </div>
+        </div>
+        <div style="padding:24px 28px;">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">🔍 AI Observation</div>
+                    <p style="font-size:14px;color:#334155;line-height:1.7;" id="detailObservation"></p>
+                </div>
+                <div class="col-md-6">
+                    <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">💡 Recommendation</div>
+                    <p style="font-size:14px;color:#334155;line-height:1.7;" id="detailRecommendation"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-card mb-4">
+        <div class="section-title">
+            <i class="bi bi-magic" style="color:#8b5cf6;"></i>
+            What If Simulator
+            <span style="font-size:12px;font-weight:400;color:#94a3b8;margin-left:8px;">— See how lifestyle changes affect your health</span>
+        </div>
+        <div class="row g-3" id="whatifCards"></div>
+    </div>
+
+    <div class="text-center mb-4">
+        <button class="analyze-btn" onclick="startAnalysis()" style="font-size:13px;padding:12px 28px;">
+            <i class="bi bi-arrow-clockwise"></i> Regenerate Analysis
+        </button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let healthData = null;
+const loadingMessages = [
+    'Processing patient records...',
+    'Analyzing medical history...',
+    'Evaluating organ health...',
+    'Generating AI insights...',
+    'Calculating health scores...',
+    'Building your health twin...'
+];
+
+async function startAnalysis() {
+    document.getElementById('initialState').style.display = 'none';
+    document.getElementById('resultsState').style.display = 'none';
+    document.getElementById('loadingState').style.display = 'block';
+
+    let msgIndex = 0;
+    const msgInterval = setInterval(() => {
+        document.getElementById('loadingText').textContent = loadingMessages[msgIndex % loadingMessages.length];
+        msgIndex++;
+    }, 2000);
+
+    try {
+        const res = await fetch('/patients/{{ patient.id }}/health-twin/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        alert(JSON.stringify(data));
+        clearInterval(msgInterval);
+        if (data.error) {
+            alert('Error: ' + data.error);
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('initialState').style.display = 'block';
+            return;
+        }
+        healthData = data;
+        renderResults(data);
+    } catch(e) {
+        clearInterval(msgInterval);
+        alert('Connection error. Please try again.');
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('initialState').style.display = 'block';
+    }
+}
+
+function getScoreColor(score) {
+    if (score >= 80) return '#10b981';
+    if (score >= 60) return '#f59e0b';
+    return '#ef4444';
+}
+
+function getStatusClass(status) {
+    const s = status.toLowerCase();
+    if (s.includes('good') || s.includes('healthy')) return 'status-good';
+    if (s.includes('needs') || s.includes('critical')) return 'status-needs';
+    return 'status-moderate';
+}
+
+function getTrendClass(trend) {
+    const t = trend.toLowerCase();
+    if (t.includes('improv') || t.includes('good')) return 'trend-up';
+    if (t.includes('declin') || t.includes('worsen')) return 'trend-down';
+    if (t.includes('monitor')) return 'trend-monitor';
+    return 'trend-stable';
+}
+
+function renderResults(data) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('resultsState').style.display = 'block';
+
+    const score = data.overall_score || 0;
+    document.getElementById('overallScore').textContent = score;
+    document.getElementById('overallStatus').textContent = data.overall_status || '';
+    document.getElementById('healthSummary').textContent = data.summary || '';
+
+    const deg = (score / 100) * 360;
+    const color = getScoreColor(score);
+    document.getElementById('scoreCircle').style.background =
+        `conic-gradient(${color} ${deg}deg, #e2e8f0 ${deg}deg)`;
+    document.getElementById('overallScore').style.color = color;
+
+    const riskHtml = (data.risk_factors || []).map(r =>
+        `<div class="risk-item"><i class="bi bi-exclamation-triangle-fill"></i>${r}</div>`
+    ).join('');
+    const actionsHtml = (data.immediate_actions || []).map(a =>
+        `<div class="action-item"><i class="bi bi-check-circle-fill"></i>${a}</div>`
+    ).join('');
+
+    document.getElementById('riskActionsRow').innerHTML = `
+        <div class="col-md-6">
+            <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">⚠️ Risk Factors</div>
+            ${riskHtml}
+        </div>
+        <div class="col-md-6">
+            <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">✅ Immediate Actions</div>
+            ${actionsHtml}
+        </div>`;
+
+    const organHtml = (data.organs || []).map((organ, i) => {
+        const color = getScoreColor(organ.score);
+        return `
+        <div class="col-md-4 col-lg-2">
+            <div class="organ-card" onclick="showOrganDetail(${i})" id="organCard${i}">
+                <span class="organ-icon">${organ.icon}</span>
+                <div class="organ-name">${organ.name}</div>
+                <div class="organ-score" style="color:${color};">${organ.score}</div>
+                <span class="organ-status ${getStatusClass(organ.status)}">${organ.status}</span>
+                <div class="organ-progress">
+                    <div class="organ-progress-bar" style="width:${organ.score}%;background:${color};"></div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+    document.getElementById('organCards').innerHTML = organHtml;
+
+    const whatif = data.whatif || {};
+    const whatifItems = [
+        { icon: '⚖️', label: 'Lose Weight', key: 'lose_weight' },
+        { icon: '😴', label: 'Better Sleep', key: 'better_sleep' },
+        { icon: '🏃', label: 'Daily Exercise', key: 'exercise' },
+        { icon: '🚭', label: 'Quit Smoking', key: 'quit_smoking' },
+    ];
+    document.getElementById('whatifCards').innerHTML = whatifItems.map(item => `
+        <div class="col-md-3">
+            <div class="whatif-card">
+                <div style="font-size:24px;margin-bottom:8px;">${item.icon}</div>
+                <div style="font-size:13px;font-weight:700;color:#0c4a6e;margin-bottom:6px;">${item.label}</div>
+                <div style="font-size:12px;color:#0369a1;line-height:1.5;">${whatif[item.key] || 'Not available'}</div>
+            </div>
+        </div>`).join('');
+}
+
+function showOrganDetail(index) {
+    if (!healthData || !healthData.organs) return;
+    const organ = healthData.organs[index];
+    document.querySelectorAll('.organ-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('organCard' + index).classList.add('selected');
+    document.getElementById('detailIcon').textContent = organ.icon;
+    document.getElementById('detailName').textContent = organ.name;
+    document.getElementById('detailObservation').textContent = organ.observation;
+    document.getElementById('detailRecommendation').textContent = organ.recommendation;
+    const trendEl = document.getElementById('detailTrend');
+    trendEl.textContent = organ.trend;
+    trendEl.className = 'trend-badge ' + getTrendClass(organ.trend);
+    const riskEl = document.getElementById('detailRisk');
+    riskEl.textContent = 'Risk: ' + organ.risk;
+    riskEl.className = 'risk-badge risk-' + organ.risk.toLowerCase();
+    const panel = document.getElementById('detailPanel');
+    panel.classList.add('active');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+</body>
+</html>

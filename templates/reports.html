@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Reports & Analytics{% endblock %}
+{% block breadcrumb %}Reports{% endblock %}
+
+{% block content %}
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="icon-box" style="background:#e8f4ff;">
+                <i class="bi bi-person-check-fill" style="color:#00a8ff;"></i>
+            </div>
+            <div class="stat-value">{{ patient_stats.admitted }}</div>
+            <div class="stat-label">Admitted Patients</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="icon-box" style="background:#e8fff8;">
+                <i class="bi bi-person-dash-fill" style="color:#00c97a;"></i>
+            </div>
+            <div class="stat-value">{{ patient_stats.discharged }}</div>
+            <div class="stat-label">Discharged</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="icon-box" style="background:#fff0f0;">
+                <i class="bi bi-hospital-fill" style="color:#ff4757;"></i>
+            </div>
+            <div class="stat-value">{{ bed_stats.occupied }}</div>
+            <div class="stat-label">Occupied Beds</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="icon-box" style="background:#fff8e6;">
+                <i class="bi bi-capsule" style="color:#ffaa00;"></i>
+            </div>
+            <div class="stat-value">{{ low_stock_meds|length }}</div>
+            <div class="stat-label">Low Stock Medicines</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h6><i class="bi bi-pie-chart-fill me-2" style="color:#00a8ff;"></i>Bed Occupancy</h6>
+            </div>
+            <div class="content-card-body">
+                <canvas id="bedChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h6><i class="bi bi-bar-chart-fill me-2" style="color:#00d2b4;"></i>Patient Gender Distribution</h6>
+            </div>
+            <div class="content-card-body">
+                <canvas id="genderChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 2 -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h6><i class="bi bi-capsule me-2" style="color:#ffaa00;"></i>Medicine by Category</h6>
+            </div>
+            <div class="content-card-body">
+                <canvas id="medCatChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h6><i class="bi bi-person-badge-fill me-2" style="color:#a855f7;"></i>Doctors by Department</h6>
+            </div>
+            <div class="content-card-body">
+                <canvas id="deptChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Low Stock Table -->
+<div class="content-card mb-4">
+    <div class="content-card-header">
+        <h6><i class="bi bi-exclamation-triangle-fill me-2" style="color:#ffaa00;"></i>Low Stock Alert</h6>
+        <a href="/inventory" class="btn-primary-custom btn btn-sm">Manage Inventory</a>
+    </div>
+    <div class="content-card-body" style="padding:0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Medicine</th>
+                    <th>Category</th>
+                    <th>Current Stock</th>
+                    <th>Threshold</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for med in low_stock_meds %}
+                <tr>
+                    <td style="font-weight:600;">{{ med.name }}</td>
+                    <td>{{ med.category or '—' }}</td>
+                    <td style="color:#ffaa00;font-weight:700;">{{ med.quantity }}</td>
+                    <td>{{ med.low_stock_threshold }}</td>
+                    <td><span class="badge-status badge-low">{{ med.status }}</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align:center;padding:30px;color:#8899aa;">
+                        All medicines are well stocked! ✅
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Attendance Summary -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h6><i class="bi bi-calendar-check-fill me-2" style="color:#00d2b4;"></i>Attendance Summary</h6>
+    </div>
+    <div class="content-card-body">
+        <div class="row g-3">
+            {% for status, count in attendance_summary %}
+            <div class="col-md-4">
+                <div style="padding:20px;border-radius:12px;text-align:center;
+                    background:{% if status=='Present' %}#e8fff8{% elif status=='Absent' %}#fff0f0{% else %}#fff8e6{% endif %};">
+                    <div style="font-size:28px;font-weight:800;
+                        color:{% if status=='Present' %}#00c97a{% elif status=='Absent' %}#ff4757{% else %}#ffaa00{% endif %};">
+                        {{ count }}
+                    </div>
+                    <div style="font-size:13px;font-weight:600;color:#1a2332;margin-top:4px;">{{ status }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Bed Occupancy
+new Chart(document.getElementById('bedChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Available', 'Occupied', 'Maintenance'],
+        datasets: [{
+            data: [{{ bed_stats.available }}, {{ bed_stats.occupied }}, {{ bed_stats.maintenance }}],
+            backgroundColor: ['#00c97a', '#ff4757', '#ffaa00'],
+            borderWidth: 0, hoverOffset: 6
+        }]
+    },
+    options: {
+        responsive: true, cutout: '65%',
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 12 } } } }
+    }
+});
+
+// Gender Chart
+new Chart(document.getElementById('genderChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Male', 'Female'],
+        datasets: [{
+            data: [{{ patient_stats.male }}, {{ patient_stats.female }}],
+            backgroundColor: ['#00a8ff', '#ff6eb4'],
+            borderWidth: 0, hoverOffset: 6
+        }]
+    },
+    options: {
+        responsive: true, cutout: '65%',
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 12 } } } }
+    }
+});
+
+// Medicine Category
+new Chart(document.getElementById('medCatChart'), {
+    type: 'bar',
+    data: {
+        labels: [{% for cat, qty in med_by_category %}'{{ cat }}',{% endfor %}],
+        datasets: [{
+            label: 'Quantity',
+            data: [{% for cat, qty in med_by_category %}{{ qty }},{% endfor %}],
+            backgroundColor: ['#00a8ff','#00d2b4','#ffaa00','#ff4757','#a855f7','#06b6d4'],
+            borderRadius: 8, borderSkipped: false
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, grid: { color: '#f0f4f8' } },
+            x: { grid: { display: false } }
+        }
+    }
+});
+
+// Department Chart
+new Chart(document.getElementById('deptChart'), {
+    type: 'bar',
+    data: {
+        labels: [{% for dept, count in docs_by_dept %}'{{ dept }}',{% endfor %}],
+        datasets: [{
+            label: 'Doctors',
+            data: [{% for dept, count in docs_by_dept %}{{ count }},{% endfor %}],
+            backgroundColor: '#a855f7',
+            borderRadius: 8, borderSkipped: false
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, grid: { color: '#f0f4f8' } },
+            x: { grid: { display: false } }
+        }
+    }
+});
+</script>
+{% endblock %}
