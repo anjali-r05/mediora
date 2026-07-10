@@ -681,7 +681,7 @@ Return ONLY a valid JSON object, no markdown code fences, no commentary before o
 
 Base every score and observation on the diagnosis and medical history given. If information for a category is missing, infer a reasonable general-population baseline and note that briefly in that organ's observation. Keep language clinical but understandable to hospital staff."""
 
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(prompt)
         raw_text = (response.text or '').strip()
         cleaned = re.sub(r'^```json\s*|^```\s*|```\s*$', '', raw_text, flags=re.MULTILINE).strip()
@@ -768,7 +768,7 @@ Hospital: Patients={stats['total_patients']}, Doctors={stats['total_doctors']},
 Beds={stats['available_beds']}/{stats['total_beds']} available,
 Low Stock={', '.join([m.name for m in low_stock]) if low_stock else 'None'}.
 Answer in Hindi if user writes Hindi. Be concise. Recommend doctor for medical advice."""
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(f"{context}\n\nUser: {user_message}")
         return jsonify({'response': response.text or 'Could not generate response.'})
     except Exception as e:
@@ -789,7 +789,7 @@ Occupancy={occ}%, LowStock={', '.join([m.name for m in low_stock]) if low_stock 
 Expired={len(expired)}, DoctorsPresent={stats['today_attendance']}/{stats['total_doctors']}.
 Give 5 insights as JSON: [{{"title":"...","description":"...","priority":"High/Medium/Low","category":"..."}}]
 Return ONLY valid JSON."""
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(prompt)
         text = re.sub(r'```json|```', '', response.text.strip()).strip()
         return jsonify({'insights': json.loads(text)})
@@ -808,7 +808,7 @@ def sentinel_scan():
         return jsonify({'error': 'Gemini API key not configured. Add GEMINI_API_KEY to your .env file and restart the app.'}), 503
 
     def call_gemini(prompt):
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(prompt)
         return response.text or ''
 
@@ -867,7 +867,7 @@ def orchestrator_scan():
         return jsonify({'error': 'Gemini API key not configured. Add GEMINI_API_KEY to your .env file and restart the app.'}), 503
 
     def call_gemini(prompt):
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(prompt)
         return response.text or ''
 
